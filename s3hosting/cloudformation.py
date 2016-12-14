@@ -7,36 +7,86 @@ from troposphere.cloudfront import Distribution, DistributionConfig
 from troposphere.cloudfront import Origin, DefaultCacheBehavior
 from troposphere.cloudfront import ForwardedValues
 from troposphere.cloudfront import S3Origin
-
+from troposphere.s3 import Bucket, PublicRead
+from troposphere.certificatemanager import Certificate, DomainValidationOption
 
 t = Template()
 
 t.add_description("Hosting static files in S3 with Cloudfront")
 
-s3dnsname = t.add_parameter(Parameter(
-    "S3DNSName",
-    Description="The DNS name of an existing S3 bucket to use as the "
-                "Cloudfront distribution origin",
-    Type="String",
-))
-
-myDistribution = t.add_resource(Distribution(
-    "myDistribution",
-    DistributionConfig=DistributionConfig(
-        Origins=[
-            Origin(Id="Origin1", DomainName=Ref(s3dnsname), S3OriginConfig=S3Origin())
-            ],
-        DefaultCacheBehavior=DefaultCacheBehavior(
-            TargetOriginId="Origin1",
-            ForwardedValues=ForwardedValues(
-                QueryString=False
-            ),
-            ViewerProtocolPolicy="allow-all"),
-        Enabled=True,
-        HttpVersion='http2'
+##################
+#
+# Parameters
+#
+##################
+myFqdn = t.add_parameter(
+    Parameter(
+        "FQDN",
+        Description="fully qualified domain name",
+        Type="String",
     )
-))
+)
 
+##################
+#
+# Resources
+#
+##################
+
+# S3 bucket
+s3bucket = t.add_resource(
+    Bucket("S3Bucket", AccessControl=PublicRead)
+)
+
+# Cloudfront distro
+myDistribution = t.add_resource(
+    Distribution(
+        "myDistribution",
+        DistributionConfig=DistributionConfig(
+            Origins=[
+                Origin(
+                    Id="Origin1",
+                    DomainName=Ref(myFqdn),
+                    S3OriginConfig=S3Origin()
+                )
+            ],
+            DefaultCacheBehavior=DefaultCacheBehavior(
+                TargetOriginId="Origin1",
+                ForwardedValues=ForwardedValues(
+                    QueryString=False
+                ),
+                ViewerProtocolPolicy="allow-all"),
+            Enabled=True,
+            HttpVersion='http2'
+        )
+    )
+)
+
+# SSL cert
+t.add_resource(
+    Certificate(
+        'mycert',
+        DomainName=Ref(myFqdn),
+        DomainValidationOptions=[
+            DomainValidationOption(
+                DomainName=Ref(myFqdn),
+                ValidationDomain=Ref(myFqdn),
+            ),
+        ],
+        Tags=[
+            {
+                'Key': 'domainName',
+                'Value': Ref(myFqdn)
+            },
+        ],
+    )
+)
+
+##################
+#
+# Outputs
+#
+##################
 t.add_output([
     Output("DistributionId", Value=Ref(myDistribution)),
     Output(
