@@ -46,7 +46,7 @@ myDistribution = t.add_resource(
             Origins=[
                 Origin(
                     Id="Origin1",
-                    DomainName=Ref(myFqdn),
+                    DomainName=GetAtt(s3bucket, "DomainName"),
                     S3OriginConfig=S3Origin()
                 )
             ],
@@ -87,11 +87,8 @@ t.add_resource(
 # Outputs
 #
 ##################
-t.add_output([
-    Output("DistributionId", Value=Ref(myDistribution)),
-    Output(
-        "DistributionName",
-        Value=Join("", ["http://", GetAtt(myDistribution, "DomainName")])),
-])
+t.add_output(
+    Output("DistributionId", Value=Ref(myDistribution))
+)
 
 print(t.to_json())
