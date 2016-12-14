@@ -1,0 +1,62 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "AWS CloudFormation Template S3_Website_With_CloudFront_Distribution",
+
+  "Parameters" : {
+    "HostedZone" : {
+      "Type" : "String",
+      "Description" : "The DNS name of the site",
+      "AllowedPattern" : "^[a-zA-Z0-9]*.[a-zA-Z0-9]$",
+      "ConstraintDescription" : "must be a valid DNS name."
+    }
+  },
+
+  "Resources" : {
+    "S3BucketForWebsiteContent" : {
+      "Type" : "AWS::S3::Bucket",
+      "Properties" : {
+        "AccessControl" : "PublicRead",
+        "WebsiteConfiguration" : {
+           "IndexDocument" : "index.html",
+           "ErrorDocument" : "error.html"
+        }
+      }
+    },
+
+    "WebsiteCDN" : {
+      "Type" : "AWS::CloudFront::Distribution",
+      "Properties" : {
+         "DistributionConfig" : {
+           "Comment" : "CDN for S3-backed website",
+           "Aliases" : [{ "Fn::Join" : [ "", [{"Ref" : "AWS::StackName"}, {"Ref" : "AWS::AccountId"}, ".", {"Ref" : "AWS::Region"}, ".", { "Ref" : "HostedZone" }]]}],
+           "Enabled" : "true",
+	   "DefaultCacheBehavior" : {
+	     "ForwardedValues" : { "QueryString" : "true" },
+	     "TargetOriginId" : "only-origin",
+	     "ViewerProtocolPolicy" : "allow-all"
+	   },
+           "DefaultRootObject" : "index.html",
+	   "Origins" : [
+	     { "CustomOriginConfig" : 
+                 {
+                   "HTTPPort" : "80",
+                   "HTTPSPort" : "443",
+                   "OriginProtocolPolicy" : "http-only"
+                 },
+               "DomainName" : { "Fn::Join" : ["", [{"Ref" : "S3BucketForWebsiteContent"},
+                                                   {"Fn::FindInMap" : [ "Region2S3WebsiteSuffix", {"Ref" : "AWS::Region"}, "Suffix" ]}]]},
+	       "Id" : "only-origin"
+             }]
+         }
+      }
+    },
+
+   "Outputs" : {
+      "BucketName" : {
+      "Value" : { "Ref" : "S3BucketForWebsiteContent" },
+      "Description" : "Name of S3 bucket to hold website content"
+      }
+    }
+  }
+}

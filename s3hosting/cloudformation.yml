@@ -1,0 +1,55 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+    Static hosting on S3 with CloudFront
+
+Parameters:
+    # set fqdn
+    DomainName:
+        Type: String
+    CorsAllowedOrigins:
+        Type: String
+
+Resources:
+
+    # create ssl cert
+    SSLcert:
+        Type: "AWS::CertificateManager::Certificate"
+        Properties:
+            DomainName: !Ref DomainName
+        Tags:
+            - Key: DomainName
+              Value: !Ref DomainName
+
+    # bucket to store static files
+    bucket:
+        Type: "AWS::S3::Bucket"
+        DeletionPolicy: Retain
+        Properties:
+            AccessControl: PublicRead
+            Tags:
+                - Key: DomainName
+                  Value: !Ref DomainName
+            WebsiteConfiguration:
+                IndexDocument: index.html
+                ErrorDocument: error.html
+
+    # cloudfront setup
+    cloudfront:
+        Type: AWS::CloudFront::Distribution
+        Properties:
+            DistributionConfig:
+                Origins:
+                    - Id: only-origin
+                DomainName: !Ref DomainName
+                S3OriginConfig:
+                    OriginAccessIdentity: origin-access-identity/cloudfront/E127EXAMPLE51Z
+                        - Id: myCustomOrigin
+                        CustomOriginConfig:
+                            HTTPPort: '80'
+                            HTTPSPort: '443'
+                            OriginProtocolPolicy: http-only
+                            Enabled: 'true'
+                            Comment: Some comment
+                            DefaultRootObject: index.html
