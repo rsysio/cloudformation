@@ -59,22 +59,32 @@
         "HttpVersion" : "http2",
 
         "Origins" : [
-            {
-              "DomainName" : { "Fn::GetAtt" : [ "S3Bucket", "DomainName" ] },
-              "Id" : { "Fn::GetAtt" : [ "S3Bucket", "DomainName" ] },
-              "S3OriginConfig" : { "OriginAccessIdentity" : "" }
-            }
+          {
+            "DomainName" : { "Fn::GetAtt" : [ "S3Bucket", "DomainName" ] },
+            "Id" : { "Fn::GetAtt" : [ "S3Bucket", "DomainName" ] },
+            "S3OriginConfig" : { "OriginAccessIdentity" : "" }
+          }
         ],
 
         "PriceClass" : "PriceClass_200",
         "ViewerCertificate" :
-            {
-              "AcmCertificateArn" : { "Ref" : "SSLCertificate" },
-              "SslSupportMethod" : "sni-only"
-            }
+          {
+            "AcmCertificateArn" : { "Ref" : "SSLCertificate" },
+            "SslSupportMethod" : "sni-only"
           }
         }
       }
     }
+  },
+
+  "Outputs" : {
+    "DistributionEndpoint" : {
+      "Description" : "CloudFront Distribution DomainName",
+      "Value" : { "Fn::GetAtt" : [ "CloudfrontDistribution", "DomainName" ] },
+      "Export" : {
+        "Name" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "AccountVPC" ] ] }
+      }
+    }
+  }
 }
 
