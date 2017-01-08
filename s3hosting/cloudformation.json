@@ -50,8 +50,8 @@
         "DistributionConfig" : {
 
         "DefaultCacheBehavior" : {
-		  "ForwardedValues" : { "QueryString" : false },
-          "TargetOriginId" : { "Ref" : "DomainName" },
+		      "ForwardedValues" : { "QueryString" : false },
+          "TargetOriginId" : { "Fn::GetAtt" : [ "S3Bucket", "DomainName" ] },
           "ViewerProtocolPolicy" : "redirect-to-https"
 	    },
         "DefaultRootObject" : "index.html",
