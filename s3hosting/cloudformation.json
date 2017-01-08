@@ -52,7 +52,7 @@
             {
               "Action" : [ "s3:GetObject" ],
               "Effect" : "Allow",
-              "Resource" : { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "S3Bucket" } , "/*" ]]},
+              "Resource" : { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref" : "S3Bucket" } , "/*" ] ] },
               "Principal" : "*",
               "Condition" : {
                 "StringLike" : {
