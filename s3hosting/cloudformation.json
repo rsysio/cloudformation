@@ -50,10 +50,10 @@
         "DistributionConfig" : {
 
         "DefaultCacheBehavior" : {
-		      "ForwardedValues" : { "QueryString" : false },
+		  "ForwardedValues" : { "QueryString" : false },
           "TargetOriginId" : { "Ref" : "DomainName" },
           "ViewerProtocolPolicy" : "redirect-to-https"
-		    },
+	    },
         "DefaultRootObject" : "index.html",
         "Enabled" : true,
         "HttpVersion" : "http2",
@@ -61,15 +61,16 @@
         "Origins" : [
             {
               "DomainName" : { "Fn::GetAtt" : [ "S3Bucket", "DomainName" ] },
-              "Id" : { "Fn::GetAtt" : [ "S3Bucket", "DomainName" ] }
+              "Id" : { "Fn::GetAtt" : [ "S3Bucket", "DomainName" ] },
+              "S3OriginConfig" : { "OriginAccessIdentity" : "" }
             }
         ],
 
         "PriceClass" : "PriceClass_200",
         "ViewerCertificate" :
             {
-                "AcmCertificateArn" : { "Ref" : "SSLCertificate" },
-                "SslSupportMethod" : "sni-only"
+              "AcmCertificateArn" : { "Ref" : "SSLCertificate" },
+              "SslSupportMethod" : "sni-only"
             }
           }
         }
