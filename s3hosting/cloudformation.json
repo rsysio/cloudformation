@@ -37,9 +37,9 @@
       "Properties" : {
         "AccessControl" : "PublicRead",
         "WebsiteConfiguration" : {
-					"ErrorDocument" : "error.html",
-					"IndexDocument" : "index.html"
-				}
+          "ErrorDocument" : "error.html",
+          "IndexDocument" : "index.html"
+        }
       }
     },
 
@@ -50,10 +50,10 @@
         "DistributionConfig" : {
 
         "DefaultCacheBehavior" : {
-		      "ForwardedValues" : { "QueryString" : false },
+          "ForwardedValues" : { "QueryString" : false },
           "TargetOriginId" : { "Fn::GetAtt" : [ "S3Bucket", "DomainName" ] },
           "ViewerProtocolPolicy" : "redirect-to-https"
-	    },
+      },
         "DefaultRootObject" : "index.html",
         "Enabled" : true,
         "HttpVersion" : "http2",
