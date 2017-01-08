@@ -5,7 +5,7 @@
 
   "Parameters" : {
 
-    "RootDomainName" : {
+    "RootDomain" : {
       "Type" : "String",
       "Description" : "Domain name for your website (example.com)"
     },
@@ -22,11 +22,11 @@
     "SSLCertificate" : {
       "Type" : "AWS::CertificateManager::Certificate",
       "Properties" : {
-        "DomainName" : { "Ref" : "HostName" },
+        "DomainName" : { "Ref" : "DomainName" },
         "DomainValidationOptions" : [
           {
-            "DomainName" : { "Ref" : "HostName" },
-            "ValidationDomain" : { "Ref" : "DomainName" },
+            "DomainName" : { "Ref" : "DomainName" },
+            "ValidationDomain" : { "Ref" : "RootDomain" }
           }
         ]
       }
@@ -44,31 +44,36 @@
     },
 
     "CloudfrontDistribution" : {
-      	"Type" : "AWS::CloudFront::Distribution",
+      "Type" : "AWS::CloudFront::Distribution",
       "Properties" : {
+
         "DistributionConfig" : {
-          "DefaultCacheBehavior" : {
-						"ForwardedValues" : { "QueryString" : false },
-						"TargetOriginId" : "myS3Origin",
-						"TrustedSigners" : [ String, ... ],
-						"ViewerProtocolPolicy" : String
-					},
-          "DefaultRootObject" : String,
-          "Enabled" : Boolean,
-          "HttpVersion" : String,
-          "Logging" : Logging,
-          "Origins" : [ Origin, ... ],
-          "PriceClass" : String,
-          "Restrictions" : Restriction,
-          "ViewerCertificate" : ViewerCertificate,
-          "WebACLId" : String
-        } 
+
+        "DefaultCacheBehavior" : {
+		      "ForwardedValues" : { "QueryString" : false },
+          "TargetOriginId" : { "Ref" : "DomainName" },
+          "ViewerProtocolPolicy" : "redirect-to-https"
+		    },
+        "DefaultRootObject" : "index.html",
+        "Enabled" : true,
+        "HttpVersion" : "http2",
+
+        "Origins" : [
+            {
+              "DomainName" : { "Fn::GetAtt" : [ "S3Bucket", "DomainName" ] },
+              "Id" : { "Fn::GetAtt" : [ "S3Bucket", "DomainName" ] }
+            }
+        ],
+
+        "PriceClass" : "PriceClass_200",
+        "ViewerCertificate" :
+            {
+                "AcmCertificateArn" : { "Ref" : "SSLCertificate" },
+                "SslSupportMethod" : "sni-only"
+            }
+          }
+        }
       }
     }
-
-  },
-
-  "Outputs" : {
-
-  }
 }
+
