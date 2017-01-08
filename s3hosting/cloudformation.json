@@ -50,15 +50,11 @@
         "PolicyDocument" : {
           "Statement" : [
             {
+              "Sid" : "PublicReadForGetBucketObjects",
               "Action" : [ "s3:GetObject" ],
               "Effect" : "Allow",
               "Resource" : { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref" : "S3Bucket" } , "/*" ] ] },
-              "Principal" : "*",
-              "Condition" : {
-                "StringLike" : {
-                  "aws:Referer" : [ "https://www.rsys.io/*" ]
-                }
-              }
+              "Principal" : "*"
             }
           ]
         }
