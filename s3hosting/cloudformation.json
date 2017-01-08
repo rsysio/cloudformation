@@ -43,6 +43,28 @@
       }
     },
 
+    "S3BucketPolicy" : {
+      "Type" : "AWS::S3::BucketPolicy",
+      "Properties" : {
+        "Bucket" : {"Ref" : "S3Bucket"},
+        "PolicyDocument": {
+          "Statement":[{
+          "Action":["s3:GetObject"],
+          "Effect":"Allow",
+          "Resource": { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "S3Bucket" } , "/*" ]]},
+          "Principal":"*",
+            "Condition":{
+              "StringLike":{
+                "aws:Referer":[
+                  "https://www.rsys.io/*"
+                ]
+              }
+            }
+          }]
+        }
+      }
+    },
+
     "CloudfrontDistribution" : {
       "Type" : "AWS::CloudFront::Distribution",
       "Properties" : {
