@@ -8,21 +8,17 @@ from troposphere.cloudfront import S3Origin
 
 t = Template()
 
-t.add_description(
-    "AWS CloudFormation Sample Template CloudFront_S3: Sample template "
-    "showing how to create an Amazon CloudFront distribution using an "
-    "S3 origin. "
-    "**WARNING** This template creates a CloudFront distribution. "
-    "You will be billed for the AWS resources used if you create "
-    "a stack from this template.")
+t.add_description("Static content hosting on S3 with CloudFront")
 
-s3dnsname = t.add_parameter(Parameter(
-    "S3DNSName",
-    Description="The DNS name of an existing S3 bucket to use as the "
-                "Cloudfront distribution origin",
+# Parameters
+s3dnsname = Parameter("S3DNSName",
+    Description="The DNS name of an existing S3 bucket to use as the Cloudfront distribution origin",
     Type="String",
-))
+)
 
+t.add_parameter(s3dnsname)
+
+# Resources
 myDistribution = t.add_resource(Distribution(
     "myDistribution",
     DistributionConfig=DistributionConfig(
@@ -39,6 +35,12 @@ myDistribution = t.add_resource(Distribution(
     )
 ))
 
+t.add_resource([
+    cfDistro,
+    ]
+)
+
+# Outputs
 t.add_output([
     Output("DistributionId", Value=Ref(myDistribution)),
     Output(
