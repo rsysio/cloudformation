@@ -79,12 +79,16 @@ myDistribution = t.add_resource(Distribution(
             Origin(
                 Id              = Ref('AWS::StackName'),
                 DomainName      = GetAtt(s3_bucket, 'DomainName'),
-                S3OriginConfig  = S3Origin()
+                S3OriginConfig  = S3Origin(OriginAccessIdentity=Join('', [
+                        "origin-access-identity/cloudfront/",
+                        Ref(origin_access_id),
+                    ])
+                )
             )
         ],
         # default cache
         DefaultCacheBehavior = DefaultCacheBehavior(
-            TargetOriginId          = "Origin 1",
+            TargetOriginId          = Ref('AWS::StackName'),
             ForwardedValues         = ForwardedValues(QueryString=False),
             ViewerProtocolPolicy    = "redirect-to-https"
         ),
