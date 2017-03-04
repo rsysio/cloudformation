@@ -1,51 +1,117 @@
+# Converted from CloudFront_S3.template located at:
+# http://aws.amazon.com/cloudformation/aws-cloudformation-templates/
+
 from troposphere import GetAtt, Join, Output
 from troposphere import Parameter, Ref, Template
 from troposphere.cloudfront import Distribution, DistributionConfig
 from troposphere.cloudfront import Origin, DefaultCacheBehavior
 from troposphere.cloudfront import ForwardedValues
 from troposphere.cloudfront import S3Origin
+from troposphere.certificatemanager import Certificate, DomainValidationOption
+from troposphere.s3 import Bucket, BucketPolicy
 
 
 t = Template()
 
-t.add_description("Static content hosting on S3 with CloudFront")
+t.add_description(
+    "AWS CloudFormation Sample Template CloudFront_S3: Sample template "
+    "showing how to create an Amazon CloudFront distribution using an "
+    "S3 origin. "
+    "**WARNING** This template creates a CloudFront distribution. "
+    "You will be billed for the AWS resources used if you create "
+    "a stack from this template.")
 
-# Parameters
-s3dnsname = Parameter("S3DNSName",
-    Description="The DNS name of an existing S3 bucket to use as the Cloudfront distribution origin",
-    Type="String",
-)
+# www.myawesomesite.com
+domain_name = t.add_parameter(Parameter(
+    "domainName",
+    Description = "Domain name for your site",
+    Type        = "String"
+))
 
-t.add_parameter(s3dnsname)
+# awesomesite.com
+zone_apex = t.add_parameter(Parameter(
+    "zoneApex",
+    Description = "Root domain name www.[example.com]",
+    Type        = "String"
+))
 
+# why is this not in cloudformation AWS ???!
+origin_access_id = t.add_parameter(Parameter(
+    "originAccessIdentity",
+    Description = "Origin Access Identity ARN",
+    Type        = "String"
+))
+
+############
 # Resources
+############
+
+# SSL cert for CloudFront
+ssl_certificate = t.add_resource(Certificate(
+    'myCert',
+    DomainName              = Ref(domain_name),
+    DomainValidationOptions = [
+        DomainValidationOption(
+            DomainName          = Ref(domain_name),
+            ValidationDomain    = Ref(zone_apex),
+        ),
+    ],
+))
+
+s3_bucket = t.add_resource(Bucket(
+    'myBucket',
+
+))
+
+bucket_policy = t.add_resource(BucketPolicy(
+    "myBucketPolicy",
+    PolicyDocument = {
+        "Version":"2012-10-17",
+        "Id":"PolicyForCloudFrontPrivateContent",
+        "Statement":[
+            {
+               "Sid":" Grant a CloudFront Origin Identity access to support private content",
+               "Effect":"Allow",
+               "Principal":{"CanonicalUser":"79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be"},
+               "Action":"s3:GetObject",
+               "Resource":"arn:aws:s3:::example-bucket/*"
+            }
+       ]
+    }
+))
+
+# CloudFront distribution
 myDistribution = t.add_resource(Distribution(
     "myDistribution",
-    DistributionConfig=DistributionConfig(
-        Origins=[Origin(Id="Origin 1", DomainName=Ref(s3dnsname),
-                        S3OriginConfig=S3Origin())],
-        DefaultCacheBehavior=DefaultCacheBehavior(
-            TargetOriginId="Origin 1",
-            ForwardedValues=ForwardedValues(
-                QueryString=False
-            ),
-            ViewerProtocolPolicy="allow-all"),
-        Enabled=True,
-        HttpVersion='http2'
+    # config object here
+    DistributionConfig  = DistributionConfig(
+        # list of origins
+        Origins = [
+            Origin(
+                Id              = "Origin1",
+                DomainName      = Ref(domain_name),
+                S3OriginConfig  = S3Origin())
+        ],
+        # default cache
+        DefaultCacheBehavior = DefaultCacheBehavior(
+            TargetOriginId          = "Origin 1",
+            ForwardedValues         = ForwardedValues(QueryString=False),
+            ViewerProtocolPolicy    = "allow-all"),
+        # enable it
+        Enabled     = True,
+        # we want http2 in 2017
+        HttpVersion = 'http2'
     )
 ))
 
-t.add_resource([
-    cfDistro,
-    ]
-)
-
 # Outputs
 t.add_output([
+
     Output("DistributionId", Value=Ref(myDistribution)),
-    Output(
-        "DistributionName",
+
+    Output("DistributionName",
         Value=Join("", ["http://", GetAtt(myDistribution, "DomainName")])),
+
 ])
 
 print(t.to_json())
