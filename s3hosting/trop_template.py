@@ -1,9 +1,6 @@
-# Converted from CloudFront_S3.template located at:
-# http://aws.amazon.com/cloudformation/aws-cloudformation-templates/
-
 from troposphere import GetAtt, Join, Output
 from troposphere import Parameter, Ref, Template
-from troposphere.cloudfront import Distribution, DistributionConfig
+from troposphere.cloudfront import Distribution, DistributionConfig, ViewerCertificate
 from troposphere.cloudfront import Origin, DefaultCacheBehavior
 from troposphere.cloudfront import ForwardedValues
 from troposphere.cloudfront import S3Origin
@@ -66,7 +63,7 @@ bucket_policy = t.add_resource(BucketPolicy(
                "Effect"     : "Allow",
                "Principal"  : {"CanonicalUser" : Ref(origin_access_id)},
                "Action"     : "s3:GetObject",
-               "Resource"   : Ref(s3_bucket)
+               "Resource"   : Join('', [ 'arn:aws:s3:::', Ref(s3_bucket), '/*' ])
             }
        ]
     }
@@ -88,11 +85,20 @@ myDistribution = t.add_resource(Distribution(
         DefaultCacheBehavior = DefaultCacheBehavior(
             TargetOriginId          = "Origin 1",
             ForwardedValues         = ForwardedValues(QueryString=False),
-            ViewerProtocolPolicy    = "allow-all"),
+            ViewerProtocolPolicy    = "redirect-to-https"
+        ),
         # enable it
-        Enabled     = True,
+        Enabled             = True,
         # we want http2 in 2017
-        HttpVersion = 'http2'
+        HttpVersion         = 'http2',
+        # cheap and cheerful
+        PriceClass          = "PriceClass_200",
+        # add SSL
+        ViewerCertificate   =  ViewerCertificate(
+            AcmCertificateArn   = Ref(ssl_certificate),
+            SslSupportMethod    = "sni-only"
+        ),
+        DefaultRootObject   = "index.html"
     )
 ))
 
