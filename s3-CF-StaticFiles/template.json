@@ -107,6 +107,11 @@
             "DependsOn": "myCert",
             "Properties": {
                 "DistributionConfig": {
+                    "Aliases": [
+                        {
+                            "Ref": "domainName"
+                        }
+                    ],
                     "DefaultCacheBehavior": {
                         "ForwardedValues": {
                             "QueryString": "false"

@@ -79,6 +79,7 @@ myDistribution = t.add_resource(Distribution(
     DependsOn = 'myCert',
     # config object here
     DistributionConfig  = DistributionConfig(
+        Aliases = [Ref(domain_name)],
         # list of origins
         Origins = [
             Origin(
