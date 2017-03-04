@@ -1,3 +1,6 @@
+# Create it in us-east-1 as per
+# https://cloudonaut.io/pitfall-acm-certificate-cloudfront-cloudformation/
+
 from troposphere import GetAtt, Join, Output
 from troposphere import Parameter, Ref, Template
 from troposphere.cloudfront import Distribution, DistributionConfig, ViewerCertificate
