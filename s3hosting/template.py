@@ -1,7 +1,7 @@
 # Converted from CloudFront_S3.template located at:
 # http://aws.amazon.com/cloudformation/aws-cloudformation-templates/
 
-from troposphere import GetAtt, Join, Output, Sub
+from troposphere import GetAtt, Join, Output
 from troposphere import Parameter, Ref, Template
 from troposphere.cloudfront import Distribution, DistributionConfig
 from troposphere.cloudfront import Origin, DefaultCacheBehavior
@@ -13,13 +13,7 @@ from troposphere.s3 import Bucket, BucketPolicy
 
 t = Template()
 
-t.add_description(
-    "AWS CloudFormation Sample Template CloudFront_S3: Sample template "
-    "showing how to create an Amazon CloudFront distribution using an "
-    "S3 origin. "
-    "**WARNING** This template creates a CloudFront distribution. "
-    "You will be billed for the AWS resources used if you create "
-    "a stack from this template.")
+t.add_description("Serving static content from an S3 bucket with CloudFront")
 
 # www.myawesomesite.com
 domain_name = t.add_parameter(Parameter(
@@ -58,23 +52,21 @@ ssl_certificate = t.add_resource(Certificate(
     ],
 ))
 
-s3_bucket = t.add_resource(Bucket(
-    'myBucket',
-))
+s3_bucket = t.add_resource(Bucket('myBucket'))
 
 bucket_policy = t.add_resource(BucketPolicy(
     "myBucketPolicy",
-    Bucket = Ref(s3_bucket),
-    PolicyDocument = {
-        "Version" : "2012-10-17",
-        "Id" : "PolicyForCloudFrontPrivateContent",
+    Bucket          = Ref(s3_bucket),
+    PolicyDocument  = {
+        "Version"   : "2012-10-17",
+        "Id"        : "PolicyForCloudFrontPrivateContent",
         "Statement" : [
             {
-               "Sid" : " Grant a CloudFront Origin Identity access to support private content",
-               "Effect" : "Allow",
-               "Principal" : {"CanonicalUser" : Ref(origin_access_id)},
-               "Action" : "s3:GetObject",
-               "Resource" : Ref(s3_bucket)
+               "Sid"        : " Grant a CloudFront Origin Identity access to support private content",
+               "Effect"     : "Allow",
+               "Principal"  : {"CanonicalUser" : Ref(origin_access_id)},
+               "Action"     : "s3:GetObject",
+               "Resource"   : Ref(s3_bucket)
             }
        ]
     }
@@ -106,9 +98,9 @@ myDistribution = t.add_resource(Distribution(
 
 # Outputs
 t.add_output([
-
+    # find by Id in console
     Output("DistributionId", Value=Ref(myDistribution)),
-
+    # Point CNAME here
     Output("DistributionName",
         Value=Join("", ["http://", GetAtt(myDistribution, "DomainName")])),
 
