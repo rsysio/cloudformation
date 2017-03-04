@@ -1,0 +1,160 @@
+{
+    "Description": "Serving static content from an S3 bucket with CloudFront",
+    "Outputs": {
+        "DistributionId": {
+            "Value": {
+                "Ref": "myDistribution"
+            }
+        },
+        "DistributionName": {
+            "Value": {
+                "Fn::Join": [
+                    "",
+                    [
+                        "http://",
+                        {
+                            "Fn::GetAtt": [
+                                "myDistribution",
+                                "DomainName"
+                            ]
+                        }
+                    ]
+                ]
+            }
+        }
+    },
+    "Parameters": {
+        "domainName": {
+            "Description": "Domain name for your site",
+            "Type": "String"
+        },
+        "originAccessIdentity": {
+            "Description": "Origin Access Identity ID",
+            "Type": "String"
+        },
+        "zoneApex": {
+            "Description": "Root domain name www.[example.com]",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "myBucket": {
+            "Type": "AWS::S3::Bucket"
+        },
+        "myBucketPolicy": {
+            "Properties": {
+                "Bucket": {
+                    "Ref": "myBucket"
+                },
+                "PolicyDocument": {
+                    "Id": "PolicyForCloudFrontPrivateContent",
+                    "Statement": [
+                        {
+                            "Action": "s3:GetObject",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": {
+                                    "Fn::Join": [
+                                        " ",
+                                        [
+                                            "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity",
+                                            {
+                                                "Ref": "originAccessIdentity"
+                                            }
+                                        ]
+                                    ]
+                                }
+                            },
+                            "Resource": {
+                                "Fn::Join": [
+                                    "",
+                                    [
+                                        "arn:aws:s3:::",
+                                        {
+                                            "Ref": "myBucket"
+                                        },
+                                        "/*"
+                                    ]
+                                ]
+                            },
+                            "Sid": " Grant a CloudFront Origin Identity access to support private content"
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                }
+            },
+            "Type": "AWS::S3::BucketPolicy"
+        },
+        "myCert": {
+            "Properties": {
+                "DomainName": {
+                    "Ref": "domainName"
+                },
+                "DomainValidationOptions": [
+                    {
+                        "DomainName": {
+                            "Ref": "domainName"
+                        },
+                        "ValidationDomain": {
+                            "Ref": "zoneApex"
+                        }
+                    }
+                ]
+            },
+            "Type": "AWS::CertificateManager::Certificate"
+        },
+        "myDistribution": {
+            "DependsOn": "myCert",
+            "Properties": {
+                "DistributionConfig": {
+                    "DefaultCacheBehavior": {
+                        "ForwardedValues": {
+                            "QueryString": "false"
+                        },
+                        "TargetOriginId": {
+                            "Ref": "AWS::StackName"
+                        },
+                        "ViewerProtocolPolicy": "redirect-to-https"
+                    },
+                    "DefaultRootObject": "index.html",
+                    "Enabled": "true",
+                    "HttpVersion": "http2",
+                    "Origins": [
+                        {
+                            "DomainName": {
+                                "Fn::GetAtt": [
+                                    "myBucket",
+                                    "DomainName"
+                                ]
+                            },
+                            "Id": {
+                                "Ref": "AWS::StackName"
+                            },
+                            "S3OriginConfig": {
+                                "OriginAccessIdentity": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "origin-access-identity/cloudfront/",
+                                            {
+                                                "Ref": "originAccessIdentity"
+                                            }
+                                        ]
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    "PriceClass": "PriceClass_200",
+                    "ViewerCertificate": {
+                        "AcmCertificateArn": {
+                            "Ref": "myCert"
+                        },
+                        "SslSupportMethod": "sni-only"
+                    }
+                }
+            },
+            "Type": "AWS::CloudFront::Distribution"
+        }
+    }
+}

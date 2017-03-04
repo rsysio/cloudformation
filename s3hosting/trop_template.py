@@ -32,12 +32,6 @@ origin_access_id = t.add_parameter(Parameter(
     Type        = "String"
 ))
 
-origin_access_s3_user_id = t.add_parameter(Parameter(
-    "originAccessIdentityS3UserId",
-    Description = "Amazon S3 Canonical User ID (79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be)",
-    Type        = "String"
-))
-
 ############
 # Resources
 ############
@@ -66,7 +60,9 @@ bucket_policy = t.add_resource(BucketPolicy(
             {
                "Sid"        : " Grant a CloudFront Origin Identity access to support private content",
                "Effect"     : "Allow",
-               "Principal"  : { "CanonicalUser" : Ref(origin_access_s3_user_id) },
+               "Principal"  : {
+                    "AWS" : Join(" ", ["arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity", Ref(origin_access_id)])
+                },
                "Action"     : "s3:GetObject",
                "Resource"   : Join('', [ 'arn:aws:s3:::', Ref(s3_bucket), '/*' ])
             }
@@ -77,6 +73,7 @@ bucket_policy = t.add_resource(BucketPolicy(
 # CloudFront distribution
 myDistribution = t.add_resource(Distribution(
     "myDistribution",
+    DependsOn = 'myCert',
     # config object here
     DistributionConfig  = DistributionConfig(
         # list of origins
