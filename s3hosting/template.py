@@ -1,7 +1,7 @@
 # Converted from CloudFront_S3.template located at:
 # http://aws.amazon.com/cloudformation/aws-cloudformation-templates/
 
-from troposphere import GetAtt, Join, Output
+from troposphere import GetAtt, Join, Output, Sub
 from troposphere import Parameter, Ref, Template
 from troposphere.cloudfront import Distribution, DistributionConfig
 from troposphere.cloudfront import Origin, DefaultCacheBehavior
@@ -38,7 +38,7 @@ zone_apex = t.add_parameter(Parameter(
 # why is this not in cloudformation AWS ???!
 origin_access_id = t.add_parameter(Parameter(
     "originAccessIdentity",
-    Description = "Origin Access Identity ARN",
+    Description = "Amazon S3 Canonical User ID (79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be)",
     Type        = "String"
 ))
 
@@ -60,21 +60,21 @@ ssl_certificate = t.add_resource(Certificate(
 
 s3_bucket = t.add_resource(Bucket(
     'myBucket',
-
 ))
 
 bucket_policy = t.add_resource(BucketPolicy(
     "myBucketPolicy",
+    Bucket = Ref(s3_bucket),
     PolicyDocument = {
-        "Version":"2012-10-17",
-        "Id":"PolicyForCloudFrontPrivateContent",
-        "Statement":[
+        "Version" : "2012-10-17",
+        "Id" : "PolicyForCloudFrontPrivateContent",
+        "Statement" : [
             {
-               "Sid":" Grant a CloudFront Origin Identity access to support private content",
-               "Effect":"Allow",
-               "Principal":{"CanonicalUser":"79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be"},
-               "Action":"s3:GetObject",
-               "Resource":"arn:aws:s3:::example-bucket/*"
+               "Sid" : " Grant a CloudFront Origin Identity access to support private content",
+               "Effect" : "Allow",
+               "Principal" : {"CanonicalUser" : Ref(origin_access_id)},
+               "Action" : "s3:GetObject",
+               "Resource" : Ref(s3_bucket)
             }
        ]
     }
