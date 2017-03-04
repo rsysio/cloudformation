@@ -77,9 +77,10 @@ myDistribution = t.add_resource(Distribution(
         # list of origins
         Origins = [
             Origin(
-                Id              = "Origin1",
-                DomainName      = Ref(domain_name),
-                S3OriginConfig  = S3Origin())
+                Id              = Ref('AWS::StackName'),
+                DomainName      = GetAtt(s3_bucket, 'DomainName'),
+                S3OriginConfig  = S3Origin()
+            )
         ],
         # default cache
         DefaultCacheBehavior = DefaultCacheBehavior(
