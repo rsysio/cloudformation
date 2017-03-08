@@ -1,7 +1,7 @@
 # Create it in us-east-1 as per
 # https://cloudonaut.io/pitfall-acm-certificate-cloudfront-cloudformation/
 
-from troposphere import GetAtt, Join, Output
+from troposphere import GetAtt, Join, Output, Condition, Equals, Not
 from troposphere import Parameter, Ref, Template
 from troposphere.cloudfront import Distribution, DistributionConfig, ViewerCertificate
 from troposphere.cloudfront import Origin, DefaultCacheBehavior
@@ -9,6 +9,7 @@ from troposphere.cloudfront import ForwardedValues
 from troposphere.cloudfront import S3Origin
 from troposphere.certificatemanager import Certificate, DomainValidationOption
 from troposphere.s3 import Bucket, BucketPolicy
+from troposphere.route53 import RecordSetType, AliasTarget
 
 
 t = Template()
@@ -38,12 +39,22 @@ origin_access_id = t.add_parameter(Parameter(
 zone_id = t.add_parameter(Parameter(
     'zoneId',
     Description = 'Route53 zone Id to create cname in',
-    Type = 'String'
+    Type = 'String',
+    Default = ''
 ))
 
-############
+#############
+# Conditions
+#############
+
+zone_set_cond = t.add_condition(
+    'zoneIdSet',
+    Not(Equals(Ref(zone_id), ''))
+)
+
+#############
 # Resources
-############
+#############
 
 # SSL cert for CloudFront
 ssl_certificate = t.add_resource(Certificate(
@@ -80,7 +91,7 @@ bucket_policy = t.add_resource(BucketPolicy(
 ))
 
 # CloudFront distribution
-myDistribution = t.add_resource(Distribution(
+my_distribution = t.add_resource(Distribution(
     'myDistribution',
     DependsOn = 'myCert',
     # config object here
@@ -119,13 +130,26 @@ myDistribution = t.add_resource(Distribution(
     )
 ))
 
+dns_record = t.add_resource(RecordSetType(
+    'aliasDnsRecord',
+    Condition = 'zoneIdSet',
+    HostedZoneId = Ref(zone_id),
+    Name = Join('', [Ref(domain_name), '.']),
+    Type = 'A',
+    AliasTarget = AliasTarget(
+        HostedZoneId = GetAtt(Ref(my_distribution), 'CanonicalHostedZoneNameID'),
+        DNSName = GetAtt(Ref(my_distribution), 'DomainName'),
+        EvaluateTargetHealth = False
+    )
+))
+
 # Outputs
 t.add_output([
     # find by Id in console
-    Output('DistributionId', Value=Ref(myDistribution)),
+    Output('DistributionId', Value=Ref(my_distribution)),
     # Point CNAME here
     Output('DistributionName',
-        Value=Join('', ['http://', GetAtt(myDistribution, 'DomainName')])),
+        Value=Join('', ['http://', GetAtt(Ref(my_distribution), 'DomainName')])),
 
 ])
 

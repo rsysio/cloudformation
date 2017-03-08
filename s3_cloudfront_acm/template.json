@@ -1,4 +1,18 @@
 {
+    "Conditions": {
+        "zoneIdSet": {
+            "Fn::Not": [
+                {
+                    "Fn::Equals": [
+                        {
+                            "Ref": "zoneId"
+                        },
+                        ""
+                    ]
+                }
+            ]
+        }
+    },
     "Description": "Serving static content from an S3 bucket with CloudFront",
     "Outputs": {
         "DistributionId": {
@@ -14,7 +28,9 @@
                         "http://",
                         {
                             "Fn::GetAtt": [
-                                "myDistribution",
+                                {
+                                    "Ref": "myDistribution"
+                                },
                                 "DomainName"
                             ]
                         }
@@ -37,11 +53,52 @@
             "Type": "String"
         },
         "zoneId": {
+            "Default": "",
             "Description": "Route53 zone Id to create cname in",
             "Type": "String"
         }
     },
     "Resources": {
+        "aliasDnsRecord": {
+            "Condition": "zoneIdSet",
+            "Properties": {
+                "AliasTarget": {
+                    "DNSName": {
+                        "Fn::GetAtt": [
+                            {
+                                "Ref": "myDistribution"
+                            },
+                            "DomainName"
+                        ]
+                    },
+                    "EvaluateTargetHealth": "false",
+                    "HostedZoneId": {
+                        "Fn::GetAtt": [
+                            {
+                                "Ref": "myDistribution"
+                            },
+                            "CanonicalHostedZoneNameID"
+                        ]
+                    }
+                },
+                "HostedZoneId": {
+                    "Ref": "zoneId"
+                },
+                "Name": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "domainName"
+                            },
+                            "."
+                        ]
+                    ]
+                },
+                "Type": "A"
+            },
+            "Type": "AWS::Route53::RecordSet"
+        },
         "myBucket": {
             "Type": "AWS::S3::Bucket"
         },
