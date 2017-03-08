@@ -1,4 +1,4 @@
 
-.PHONY: gen-template
-gen-template:
-	python gen_template.py > template.json
+.PHONY: template
+template:
+	python gen.py > template.json

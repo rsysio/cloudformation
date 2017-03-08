@@ -35,6 +35,10 @@
         "zoneApex": {
             "Description": "Root domain name www.[example.com]",
             "Type": "String"
+        },
+        "zoneId": {
+            "Description": "Route53 zone Id to create cname in",
+            "Type": "String"
         }
     },
     "Resources": {
