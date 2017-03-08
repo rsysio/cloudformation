@@ -13,26 +13,32 @@ from troposphere.s3 import Bucket, BucketPolicy
 
 t = Template()
 
-t.add_description("Serving static content from an S3 bucket with CloudFront")
+t.add_description('Serving static content from an S3 bucket with CloudFront')
 
 # www.myawesomesite.com
 domain_name = t.add_parameter(Parameter(
-    "domainName",
-    Description = "Domain name for your site",
-    Type        = "String"
+    'domainName',
+    Description = 'Domain name for your site',
+    Type        = 'String'
 ))
 
 # awesomesite.com
 zone_apex = t.add_parameter(Parameter(
-    "zoneApex",
-    Description = "Root domain name www.[example.com]",
-    Type        = "String"
+    'zoneApex',
+    Description = 'Root domain name www.[example.com]',
+    Type        = 'String'
 ))
 
 origin_access_id = t.add_parameter(Parameter(
-    "originAccessIdentity",
-    Description = "Origin Access Identity ID",
-    Type        = "String"
+    'originAccessIdentity',
+    Description = 'Origin Access Identity ID',
+    Type        = 'String'
+))
+
+zone_id = t.add_parameter(Parameter(
+    'zoneId',
+    Description = 'Route53 zone Id to create cname in',
+    Type = 'String'
 ))
 
 ############
@@ -54,20 +60,20 @@ ssl_certificate = t.add_resource(Certificate(
 s3_bucket = t.add_resource(Bucket('myBucket'))
 
 bucket_policy = t.add_resource(BucketPolicy(
-    "myBucketPolicy",
+    'myBucketPolicy',
     Bucket          = Ref(s3_bucket),
     PolicyDocument  = {
-        "Version"   : "2012-10-17",
-        "Id"        : "PolicyForCloudFrontPrivateContent",
-        "Statement" : [
+        'Version'   : '2012-10-17',
+        'Id'        : 'PolicyForCloudFrontPrivateContent',
+        'Statement' : [
             {
-               "Sid"        : " Grant a CloudFront Origin Identity access to support private content",
-               "Effect"     : "Allow",
-               "Principal"  : {
-                    "AWS" : Join(" ", ["arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity", Ref(origin_access_id)])
+               'Sid'        : ' Grant a CloudFront Origin Identity access to support private content',
+               'Effect'     : 'Allow',
+               'Principal'  : {
+                    'AWS' : Join(' ', ['arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity', Ref(origin_access_id)])
                 },
-               "Action"     : "s3:GetObject",
-               "Resource"   : Join('', [ 'arn:aws:s3:::', Ref(s3_bucket), '/*' ])
+               'Action'     : 's3:GetObject',
+               'Resource'   : Join('', [ 'arn:aws:s3:::', Ref(s3_bucket), '/*' ])
             }
        ]
     }
@@ -75,7 +81,7 @@ bucket_policy = t.add_resource(BucketPolicy(
 
 # CloudFront distribution
 myDistribution = t.add_resource(Distribution(
-    "myDistribution",
+    'myDistribution',
     DependsOn = 'myCert',
     # config object here
     DistributionConfig  = DistributionConfig(
@@ -86,7 +92,7 @@ myDistribution = t.add_resource(Distribution(
                 Id              = Ref('AWS::StackName'),
                 DomainName      = GetAtt(s3_bucket, 'DomainName'),
                 S3OriginConfig  = S3Origin(OriginAccessIdentity=Join('', [
-                        "origin-access-identity/cloudfront/",
+                        'origin-access-identity/cloudfront/',
                         Ref(origin_access_id),
                     ])
                 )
@@ -96,30 +102,30 @@ myDistribution = t.add_resource(Distribution(
         DefaultCacheBehavior = DefaultCacheBehavior(
             TargetOriginId          = Ref('AWS::StackName'),
             ForwardedValues         = ForwardedValues(QueryString=False),
-            ViewerProtocolPolicy    = "redirect-to-https"
+            ViewerProtocolPolicy    = 'redirect-to-https'
         ),
         # enable it
         Enabled             = True,
         # we want http2 in 2017
         HttpVersion         = 'http2',
         # cheap and cheerful
-        PriceClass          = "PriceClass_200",
+        PriceClass          = 'PriceClass_200',
         # add SSL
         ViewerCertificate   =  ViewerCertificate(
             AcmCertificateArn   = Ref(ssl_certificate),
-            SslSupportMethod    = "sni-only"
+            SslSupportMethod    = 'sni-only'
         ),
-        DefaultRootObject   = "index.html"
+        DefaultRootObject   = 'index.html'
     )
 ))
 
 # Outputs
 t.add_output([
     # find by Id in console
-    Output("DistributionId", Value=Ref(myDistribution)),
+    Output('DistributionId', Value=Ref(myDistribution)),
     # Point CNAME here
-    Output("DistributionName",
-        Value=Join("", ["http://", GetAtt(myDistribution, "DomainName")])),
+    Output('DistributionName',
+        Value=Join('', ['http://', GetAtt(myDistribution, 'DomainName')])),
 
 ])
 
