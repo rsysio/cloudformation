@@ -28,9 +28,7 @@
                         "http://",
                         {
                             "Fn::GetAtt": [
-                                {
-                                    "Ref": "myDistribution"
-                                },
+                                "myDistribution",
                                 "DomainName"
                             ]
                         }
@@ -65,21 +63,12 @@
                 "AliasTarget": {
                     "DNSName": {
                         "Fn::GetAtt": [
-                            {
-                                "Ref": "myDistribution"
-                            },
+                            "myDistribution",
                             "DomainName"
                         ]
                     },
                     "EvaluateTargetHealth": "false",
-                    "HostedZoneId": {
-                        "Fn::GetAtt": [
-                            {
-                                "Ref": "myDistribution"
-                            },
-                            "CanonicalHostedZoneNameID"
-                        ]
-                    }
+                    "HostedZoneId": "Z2FDTNDATAQYW2"
                 },
                 "HostedZoneId": {
                     "Ref": "zoneId"

@@ -101,7 +101,7 @@ my_distribution = t.add_resource(Distribution(
         Origins = [
             Origin(
                 Id              = Ref('AWS::StackName'),
-                DomainName      = GetAtt(s3_bucket, 'DomainName'),
+                DomainName      = GetAtt('myBucket', 'DomainName'),
                 S3OriginConfig  = S3Origin(OriginAccessIdentity=Join('', [
                         'origin-access-identity/cloudfront/',
                         Ref(origin_access_id),
@@ -137,8 +137,9 @@ dns_record = t.add_resource(RecordSetType(
     Name = Join('', [Ref(domain_name), '.']),
     Type = 'A',
     AliasTarget = AliasTarget(
-        HostedZoneId = GetAtt(Ref(my_distribution), 'CanonicalHostedZoneNameID'),
-        DNSName = GetAtt(Ref(my_distribution), 'DomainName'),
+        # as per http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html
+        HostedZoneId = 'Z2FDTNDATAQYW2',
+        DNSName = GetAtt('myDistribution', 'DomainName'),
         EvaluateTargetHealth = False
     )
 ))
@@ -149,7 +150,7 @@ t.add_output([
     Output('DistributionId', Value=Ref(my_distribution)),
     # Point CNAME here
     Output('DistributionName',
-        Value=Join('', ['http://', GetAtt(Ref(my_distribution), 'DomainName')])),
+        Value=Join('', ['http://', GetAtt('myDistribution', 'DomainName')])),
 
 ])
 
